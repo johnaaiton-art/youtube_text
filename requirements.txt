@@ -1,4 +1,4 @@
-flask
-flask-cors
-youtube-transcript-api
-gunicorn
+flask==3.0.0
+flask-cors==4.0.0
+youtube-transcript-api==0.6.1
+gunicorn==21.2.0
