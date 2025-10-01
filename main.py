@@ -1,6 +1,5 @@
 import os
 from flask import Flask, request, jsonify
-from youtube_transcript_api import YouTubeTranscriptApi
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -9,25 +8,20 @@ CORS(app)
 @app.route('/get-transcript', methods=['POST'])
 def get_transcript():
     try:
+        # Import here to avoid any module loading issues
+        from youtube_transcript_api import YouTubeTranscriptApi
+        
         data = request.get_json()
         video_id = data.get('video_id')
         
         if not video_id:
             return jsonify({"error": "Missing 'video_id' in request body"}), 400
         
-        try:
-            # Try to get English transcript first
-            transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
-        except:
-            try:
-                # Fallback: get any available transcript
-                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-                transcript = transcript_list.find_transcript(['en']).fetch()
-            except:
-                # Last resort: get the first available transcript
-                transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        # Simple approach: just get the transcript
+        transcript_data = YouTubeTranscriptApi.get_transcript(video_id)
         
-        full_text = ' '.join([entry['text'] for entry in transcript])
+        # Combine all text entries
+        full_text = ' '.join([entry['text'] for entry in transcript_data])
         
         return jsonify({
             "success": True,
@@ -44,6 +38,18 @@ def get_transcript():
 @app.route('/', methods=['GET'])
 def health():
     return jsonify({"status": "YouTube Transcript Service is running!"})
+
+@app.route('/test', methods=['GET'])
+def test_import():
+    """Test endpoint to check if library is working"""
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi
+        return jsonify({
+            "status": "Library imported successfully",
+            "methods": dir(YouTubeTranscriptApi)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
