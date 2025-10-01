@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 from flask_cors import CORS
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -38,5 +39,5 @@ def get_transcript():
 def health():
     return jsonify({"status": "YouTube Transcript Service is running!"})
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+# Remove the if __name__ == '__main__': block
+# Railway will handle running the app
