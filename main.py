@@ -1,7 +1,7 @@
+import os
 from flask import Flask, request, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 from flask_cors import CORS
-import os
 
 app = Flask(__name__)
 CORS(app)
@@ -16,10 +16,13 @@ def get_transcript():
             return jsonify({"error": "Missing 'video_id' in request body"}), 400
 
         try:
+            # Try to get English transcript first
             transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
         except:
+            # Fallback: get any available transcript
             transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-            transcript = next(transcript_list._transcripts.values()).fetch()
+            # Get the first available transcript (could be auto-generated or manual)
+            transcript = next(iter(transcript_list)).fetch()
 
         full_text = ' '.join([entry['text'] for entry in transcript])
         
@@ -39,5 +42,7 @@ def get_transcript():
 def health():
     return jsonify({"status": "YouTube Transcript Service is running!"})
 
-# Remove the if __name__ == '__main__': block
-# Railway will handle running the app
+# This block is needed for Railway when using "python main.py" as start command
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
