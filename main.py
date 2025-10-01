@@ -14,16 +14,19 @@ def get_transcript():
         
         if not video_id:
             return jsonify({"error": "Missing 'video_id' in request body"}), 400
-
+        
         try:
             # Try to get English transcript first
             transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
         except:
-            # Fallback: get any available transcript
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-            # Get the first available transcript (could be auto-generated or manual)
-            transcript = next(iter(transcript_list)).fetch()
-
+            try:
+                # Fallback: get any available transcript
+                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                transcript = transcript_list.find_transcript(['en']).fetch()
+            except:
+                # Last resort: get the first available transcript
+                transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        
         full_text = ' '.join([entry['text'] for entry in transcript])
         
         return jsonify({
@@ -31,7 +34,7 @@ def get_transcript():
             "video_id": video_id,
             "transcript": full_text
         })
-
+    
     except Exception as e:
         return jsonify({
             "success": False,
@@ -42,7 +45,6 @@ def get_transcript():
 def health():
     return jsonify({"status": "YouTube Transcript Service is running!"})
 
-# This block is needed for Railway when using "python main.py" as start command
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=False)
